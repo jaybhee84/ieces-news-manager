@@ -1,25 +1,27 @@
-import { useState, useEffect } from 'react'
-import { supabase } from './lib/supabase'
-import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import UpdateBanner from './components/UpdateBanner'
+import { useState, useEffect } from "react";
+import { supabase } from "./lib/supabase";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import UpdateBanner from "./components/UpdateBanner";
 
 export default function App() {
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoading(false)
-    })
+      setSession(session);
+      setLoading(false);
+    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => subscription.unsubscribe();
+  }, []);
 
   if (loading) {
     return (
@@ -29,7 +31,7 @@ export default function App() {
           <p className="text-slate-500 text-sm font-medium">Loading…</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -37,5 +39,5 @@ export default function App() {
       <UpdateBanner />
       {session ? <DashboardPage session={session} /> : <LoginPage />}
     </>
-  )
+  );
 }

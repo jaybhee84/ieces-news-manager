@@ -1,116 +1,435 @@
-import { useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useState } from "react";
+import { supabase } from "../lib/supabase";
+import iecesLogo from "../image/ieceslogo.png";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
-    setLoading(false)
-  }
+  const [view, setView] = useState("login"); // 'login' | 'register'
 
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Left panel — branding */}
       <div
         className="hidden md:flex w-1/2 flex-col items-center justify-center p-12 relative"
-        style={{ background: 'linear-gradient(145deg, #7B1C1C 0%, #881337 55%, #4C0D15 100%)' }}
+        style={{
+          background:
+            "linear-gradient(145deg, #7B1C1C 0%, #881337 55%, #4C0D15 100%)",
+        }}
       >
-        {/* Decorative circles */}
         <div className="absolute top-[-60px] left-[-60px] w-64 h-64 rounded-full opacity-10 border-2 border-white" />
         <div className="absolute bottom-[-40px] right-[-40px] w-80 h-80 rounded-full opacity-10 border-2 border-white" />
 
         <div className="relative z-10 text-center">
-          {/* School seal placeholder */}
-          <div className="w-24 h-24 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center mx-auto mb-6 text-5xl">
-            🏫
+          <div className="w-40 h-40 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center mx-auto mb-6 overflow-hidden p-1">
+            <img
+              src={iecesLogo}
+              alt="IECES Logo"
+              className="w-full h-full object-contain drop-shadow-lg"
+            />
           </div>
           <h1 className="text-white text-3xl font-black leading-tight mb-2">
-            IECES News Manager
+            IECES Media Manager
           </h1>
           <p className="text-rose-200 text-sm leading-relaxed max-w-xs">
-            Isabela East Central Elementary School<br />
-            <span className="text-rose-300 text-xs">SDO Isabela City, Basilan</span>
+            Isabela East Central Elementary School
+            <br />
+            <span className="text-rose-300 text-xs">Isabela City Division</span>
           </p>
-
           <div className="mt-8 pt-8 border-t border-white/20 text-rose-200/70 text-xs leading-relaxed">
-            Upload news articles · Manage photos<br />
+            Upload news articles · Manage photos
+            <br />
             Keep the school website up-to-date
           </div>
         </div>
       </div>
 
-      {/* Right panel — login form */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 p-8">
-        <div className="w-full max-w-sm">
-          {/* Mobile logo */}
-          <div className="md:hidden text-center mb-8">
-            <div className="text-4xl mb-2">🏫</div>
-            <h1 className="text-slate-900 text-xl font-black">IECES News Manager</h1>
-          </div>
-
-          <h2 className="text-2xl font-black text-slate-900 mb-1">Sign in</h2>
-          <p className="text-slate-500 text-sm mb-8">
-            Use your Supabase account credentials
-          </p>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@deped.gov.ph"
-                required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
-              />
-            </div>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
-                {error}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #7B1C1C, #881337)' }}
-            >
-              {loading ? 'Signing in…' : 'Sign In'}
-            </button>
-          </form>
-
-          <p className="text-slate-400 text-xs text-center mt-8">
-            Contact your school ICT coordinator to get access.
-          </p>
+      {/* Right panel */}
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 p-8 overflow-y-auto">
+        {/* Mobile logo */}
+        <div className="md:hidden text-center mb-6">
+          <img
+            src={iecesLogo}
+            alt="IECES Logo"
+            className="w-20 h-20 object-contain mx-auto mb-2"
+          />
+          <h1 className="text-slate-900 text-xl font-black">
+            IECES News Manager
+          </h1>
         </div>
+
+        {view === "login" ? (
+          <LoginForm onGoRegister={() => setView("register")} />
+        ) : (
+          <RegisterForm onGoLogin={() => setView("login")} />
+        )}
       </div>
     </div>
-  )
+  );
+}
+
+// ── Login Form ────────────────────────────────────────────────────────────────
+function LoginForm({ onGoRegister }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    // Look up email by username in profiles table
+    const { data: profile, error: profileErr } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("username", username.trim())
+      .single();
+
+    if (profileErr || !profile) {
+      setError("Username not found.");
+      setLoading(false);
+      return;
+    }
+
+    const { error: authErr } = await supabase.auth.signInWithPassword({
+      email: profile.email,
+      password,
+    });
+
+    if (authErr) setError(authErr.message);
+    setLoading(false);
+  };
+
+  return (
+    <div className="w-full max-w-sm">
+      <h2 className="text-2xl font-black text-slate-900 mb-1">Sign in</h2>
+      <p className="text-slate-500 text-sm mb-8">
+        Enter your username and password
+      </p>
+
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Username
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="your_username"
+            required
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Password
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            required
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+          />
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-60"
+          style={{ background: "linear-gradient(135deg, #7B1C1C, #881337)" }}
+        >
+          {loading ? "Signing in…" : "Sign In"}
+        </button>
+      </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-slate-500 text-xs">
+          Don't have an account?{" "}
+          <button
+            onClick={onGoRegister}
+            className="font-bold text-rose-900 hover:underline"
+          >
+            Register here
+          </button>
+        </p>
+      </div>
+
+      <p className="text-slate-400 text-xs text-center mt-4">
+        Contact your school ICT coordinator to get access.
+      </p>
+    </div>
+  );
+}
+
+// ── Register Form ─────────────────────────────────────────────────────────────
+function RegisterForm({ onGoLogin }) {
+  const [form, setForm] = useState({
+    familyName: "",
+    firstName: "",
+    middleInitial: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const set = (field) => (e) =>
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+
+    // 1. Check if email is in the allowed_users whitelist
+    const { data: allowed, error: allowErr } = await supabase
+      .from("allowed_users")
+      .select("email")
+      .eq("email", form.email.trim().toLowerCase())
+      .single();
+
+    if (allowErr || !allowed) {
+      setError(
+        "Your email is not authorized to register. Contact your school administrator.",
+      );
+      setLoading(false);
+      return;
+    }
+
+    // 2. Check username not already taken
+    const { data: existingUser } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("username", form.username.trim())
+      .single();
+
+    if (existingUser) {
+      setError("Username is already taken. Please choose another.");
+      setLoading(false);
+      return;
+    }
+
+    // 3. Sign up with Supabase Auth
+    const { data: authData, error: authErr } = await supabase.auth.signUp({
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+    });
+
+    if (authErr) {
+      setError(authErr.message);
+      setLoading(false);
+      return;
+    }
+
+    // 4. Insert profile record
+    const { error: profileErr } = await supabase.from("profiles").insert({
+      id: authData.user.id,
+      email: form.email.trim().toLowerCase(),
+      username: form.username.trim(),
+      family_name: form.familyName.trim(),
+      first_name: form.firstName.trim(),
+      middle_initial: form.middleInitial.trim() || null,
+    });
+
+    if (profileErr) {
+      setError(
+        "Account created but profile save failed: " + profileErr.message,
+      );
+      setLoading(false);
+      return;
+    }
+
+    setSuccess(true);
+    setLoading(false);
+  };
+
+  if (success) {
+    return (
+      <div className="w-full max-w-sm text-center">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-3xl mx-auto mb-4">
+          ✅
+        </div>
+        <h2 className="text-xl font-black text-slate-900 mb-2">
+          Account Created!
+        </h2>
+        <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+          Your account has been registered. You can now sign in with your
+          username and password.
+        </p>
+        <button
+          onClick={onGoLogin}
+          className="w-full py-3 rounded-xl font-bold text-sm text-white"
+          style={{ background: "linear-gradient(135deg, #7B1C1C, #881337)" }}
+        >
+          Go to Sign In
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-sm">
+      <h2 className="text-2xl font-black text-slate-900 mb-1">
+        Create Account
+      </h2>
+      <p className="text-slate-500 text-sm mb-6">
+        Your email must be pre-approved by the administrator.
+      </p>
+
+      <form onSubmit={handleRegister} className="space-y-3">
+        {/* Name row */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+              Family Name *
+            </label>
+            <input
+              type="text"
+              value={form.familyName}
+              onChange={set("familyName")}
+              placeholder="Dela Cruz"
+              required
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+              First Name *
+            </label>
+            <input
+              type="text"
+              value={form.firstName}
+              onChange={set("firstName")}
+              placeholder="Juan"
+              required
+              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Middle Initial{" "}
+            <span className="text-slate-400 normal-case font-normal">
+              (optional)
+            </span>
+          </label>
+          <input
+            type="text"
+            value={form.middleInitial}
+            onChange={set("middleInitial")}
+            placeholder="B."
+            maxLength={3}
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Username *
+          </label>
+          <input
+            type="text"
+            value={form.username}
+            onChange={set("username")}
+            placeholder="juan_delacruz"
+            required
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Email *
+          </label>
+          <input
+            type="email"
+            value={form.email}
+            onChange={set("email")}
+            placeholder="you@deped.gov.ph"
+            required
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Password *
+          </label>
+          <input
+            type="password"
+            value={form.password}
+            onChange={set("password")}
+            placeholder="Min. 6 characters"
+            required
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+            Confirm Password *
+          </label>
+          <input
+            type="password"
+            value={form.confirmPassword}
+            onChange={set("confirmPassword")}
+            placeholder="Re-enter password"
+            required
+            className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/30 focus:border-rose-900 transition"
+          />
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-60 mt-2"
+          style={{ background: "linear-gradient(135deg, #7B1C1C, #881337)" }}
+        >
+          {loading ? "Registering…" : "Create Account"}
+        </button>
+      </form>
+
+      <div className="mt-5 text-center">
+        <p className="text-slate-500 text-xs">
+          Already have an account?{" "}
+          <button
+            onClick={onGoLogin}
+            className="font-bold text-rose-900 hover:underline"
+          >
+            Sign in
+          </button>
+        </p>
+      </div>
+    </div>
+  );
 }
