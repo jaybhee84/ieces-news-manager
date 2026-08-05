@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --maroon: #7B1C1C;
+  --maroon-dark: #4C0D15;
+  --maroon-mid: #881337;
+  --gold: #D4A017;
+  --gold-light: #F5C842;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #f1f5f9;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Drag region for frameless window feel */
+.drag-region { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
+
+@layer utilities {
+  .text-maroon { color: var(--maroon); }
+  .bg-maroon { background-color: var(--maroon); }
+  .border-maroon { border-color: var(--maroon); }
+}
