@@ -1,5 +1,5 @@
 {
-  "name": "ieces-media-manager",
+  "name": "ieces-news-manager",
   "version": "2.0.5",
   "description": "IECES News & Activities Manager — upload and manage school news for the website",
   "main": "src/main.js",
@@ -13,8 +13,8 @@
     "release": "vite build && electron-builder --win --publish always"
   },
   "build": {
-    "appId": "ph.deped.ieces.media-manager",
-    "productName": "IECES Media Manager",
+    "appId": "ph.deped.ieces.news-manager",
+    "productName": "IECES News Manager",
     "copyright": "Copyright © 2026 SDO Isabela City",
     "directories": {
       "output": "release"
@@ -47,7 +47,7 @@
     "publish": {
       "provider": "github",
       "owner": "jaybhee84",
-      "repo": "ieces-media-manager"
+      "repo": "ieces-news-manager"
     }
   },
   "dependencies": {
