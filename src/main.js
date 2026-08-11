@@ -26,7 +26,6 @@ function createWindow() {
   if (isDev) {
     mainWindow.webContents.openDevTools()
 
-    // Retry loading Vite dev server if it hasn't bound to the port yet
     const loadDevServer = async () => {
       try {
         await mainWindow.loadURL('http://localhost:5173')
@@ -62,7 +61,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// ── IPC: pick image files ──────────────────────────────────────────────────
+// IPC: pick image files
 ipcMain.handle('pick-images', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     title: 'Select Photos',
@@ -82,12 +81,12 @@ ipcMain.handle('pick-images', async () => {
   }))
 })
 
-// ── IPC: open URL in browser ──────────────────────────────────────────────
+// IPC: open URL in browser
 ipcMain.handle('open-url', async (_, url) => {
   await shell.openExternal(url)
 })
 
-// ── Auto-updater events ───────────────────────────────────────────────────
+// Auto-updater events
 autoUpdater.on('update-available', () => {
   mainWindow?.webContents.send('update-available')
 })
