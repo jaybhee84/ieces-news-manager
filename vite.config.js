@@ -1,15 +1,25 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import electron from 'vite-plugin-electron'
 import path from 'path'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    electron({
+      // Points directly to your Electron main file
+      entry: 'src/main.js',
+    }),
+  ],
   base: './',
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      // Exclude Electron-only modules from renderer bundle
       external: ['electron'],
     },
   },
@@ -19,7 +29,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // Tell Vite not to pre-bundle these
     exclude: ['electron'],
   },
 })

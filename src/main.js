@@ -20,13 +20,23 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
     },
-    // Frameless-style with custom titlebar feel
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
   })
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools()
+
+    // Retry loading Vite dev server if it hasn't bound to the port yet
+    const loadDevServer = async () => {
+      try {
+        await mainWindow.loadURL('http://localhost:5173')
+      } catch (err) {
+        console.log('Vite dev server not ready, retrying in 1 second...')
+        setTimeout(loadDevServer, 1000)
+      }
+    }
+
+    loadDevServer()
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
