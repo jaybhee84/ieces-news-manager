@@ -14,6 +14,8 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 650,
     title: 'IECES News Manager',
+    // Window & Taskbar icon configuration
+    icon: path.join(__dirname, '../public/prieces.png'),
     backgroundColor: '#f8fafc',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -37,6 +39,7 @@ function createWindow() {
 
     loadDevServer()
   } else {
+    // Loads built Vite production output relative to src/main.js
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   }
 
