@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, dialog, Menu } = require('electron')
 const path = require('path')
 const { autoUpdater } = require('electron-updater')
 const fs = require('fs')
@@ -6,6 +6,78 @@ const fs = require('fs')
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
 let mainWindow
+let manualUpdateCheck = false
+
+function createApplicationMenu() {
+  const template = [
+    {
+      label: 'File',
+      submenu: [{ role: 'quit' }],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' },
+      ],
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' },
+      ],
+    },
+    {
+      label: 'Window',
+      submenu: [{ role: 'minimize' }, { role: 'close' }],
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Check for Updates',
+          click: async () => {
+            if (isDev) {
+              await dialog.showMessageBox(mainWindow, {
+                type: 'info',
+                title: 'Check for Updates',
+                message: 'Update checks are available in the installed app.',
+              })
+              return
+            }
+
+            manualUpdateCheck = true
+            try {
+              await autoUpdater.checkForUpdates()
+            } catch (error) {
+              manualUpdateCheck = false
+              await dialog.showMessageBox(mainWindow, {
+                type: 'error',
+                title: 'Update Check Failed',
+                message: 'The app could not check for updates.',
+                detail: error.message,
+              })
+            }
+          },
+        },
+      ],
+    },
+  ]
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -50,6 +122,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow()
+  createApplicationMenu()
 
   if (!isDev) {
     autoUpdater.checkForUpdatesAndNotify()
@@ -92,6 +165,26 @@ ipcMain.handle('open-url', async (_, url) => {
 // Auto-updater events
 autoUpdater.on('update-available', () => {
   mainWindow?.webContents.send('update-available')
+
+  if (manualUpdateCheck) {
+    manualUpdateCheck = false
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: 'A new version is available.',
+      detail: 'It is downloading in the background. The app will let you know when it is ready to install.',
+    })
+  }
+})
+autoUpdater.on('update-not-available', () => {
+  if (!manualUpdateCheck) return
+
+  manualUpdateCheck = false
+  dialog.showMessageBox(mainWindow, {
+    type: 'info',
+    title: 'No Updates Available',
+    message: `IECES News Manager ${app.getVersion()} is up to date.`,
+  })
 })
 autoUpdater.on('update-downloaded', () => {
   mainWindow?.webContents.send('update-downloaded')

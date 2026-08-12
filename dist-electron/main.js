@@ -1,1 +1,168 @@
-"use strict";const{app:a,BrowserWindow:r,ipcMain:l,shell:c,dialog:p}=require("electron"),i=require("path"),{autoUpdater:o}=require("electron-updater"),h=require("fs"),d=process.env.NODE_ENV==="development"||!a.isPackaged;let e;function s(){if(e=new r({width:1280,height:800,minWidth:1e3,minHeight:650,title:"IECES News Manager",backgroundColor:"#f8fafc",webPreferences:{preload:i.join(__dirname,"preload.js"),contextIsolation:!0,nodeIntegration:!1},titleBarStyle:process.platform==="darwin"?"hiddenInset":"default"}),d){e.webContents.openDevTools();const n=async()=>{try{await e.loadURL("http://localhost:5173")}catch{console.log("Vite dev server not ready, retrying in 1 second..."),setTimeout(n,1e3)}};n()}else e.loadFile(i.join(__dirname,"../dist/index.html"));e.on("closed",()=>{e=null})}a.whenReady().then(()=>{s(),d||o.checkForUpdatesAndNotify(),a.on("activate",()=>{r.getAllWindows().length===0&&s()})});a.on("window-all-closed",()=>{process.platform!=="darwin"&&a.quit()});l.handle("pick-images",async()=>{const n=await p.showOpenDialog(e,{title:"Select Photos",filters:[{name:"Images",extensions:["jpg","jpeg","png","webp"]}],properties:["openFile","multiSelections"]});return n.canceled?[]:n.filePaths.map(t=>({path:t,name:i.basename(t),data:h.readFileSync(t).toString("base64"),mime:t.match(/\.png$/i)?"image/png":t.match(/\.webp$/i)?"image/webp":"image/jpeg"}))});l.handle("open-url",async(n,t)=>{await c.openExternal(t)});o.on("update-available",()=>{e==null||e.webContents.send("update-available")});o.on("update-downloaded",()=>{e==null||e.webContents.send("update-downloaded")});l.handle("install-update",()=>{o.quitAndInstall()});
+"use strict";
+const { app, BrowserWindow, ipcMain, shell, dialog, Menu } = require("electron");
+const path = require("path");
+const { autoUpdater } = require("electron-updater");
+const fs = require("fs");
+const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
+let mainWindow;
+let manualUpdateCheck = false;
+function createApplicationMenu() {
+  const template = [
+    {
+      label: "File",
+      submenu: [{ role: "quit" }]
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "selectAll" }
+      ]
+    },
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" }
+      ]
+    },
+    {
+      label: "Window",
+      submenu: [{ role: "minimize" }, { role: "close" }]
+    },
+    {
+      label: "Help",
+      submenu: [
+        {
+          label: "Check for Updates",
+          click: async () => {
+            if (isDev) {
+              await dialog.showMessageBox(mainWindow, {
+                type: "info",
+                title: "Check for Updates",
+                message: "Update checks are available in the installed app."
+              });
+              return;
+            }
+            manualUpdateCheck = true;
+            try {
+              await autoUpdater.checkForUpdates();
+            } catch (error) {
+              manualUpdateCheck = false;
+              await dialog.showMessageBox(mainWindow, {
+                type: "error",
+                title: "Update Check Failed",
+                message: "The app could not check for updates.",
+                detail: error.message
+              });
+            }
+          }
+        }
+      ]
+    }
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 800,
+    minWidth: 1e3,
+    minHeight: 650,
+    title: "IECES Media Manager",
+    // Window & Taskbar icon configuration
+    icon: path.join(__dirname, "../public/iecesmediamanager.png"),
+    backgroundColor: "#f8fafc",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false
+    },
+    titleBarStyle: process.platform === "darwin" ? "hiddenInset" : "default"
+  });
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+    const loadDevServer = async () => {
+      try {
+        await mainWindow.loadURL("http://localhost:5173");
+      } catch (err) {
+        console.log("Vite dev server not ready, retrying in 1 second...");
+        setTimeout(loadDevServer, 1e3);
+      }
+    };
+    loadDevServer();
+  } else {
+    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+  }
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+}
+app.whenReady().then(() => {
+  createWindow();
+  createApplicationMenu();
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
+});
+ipcMain.handle("pick-images", async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: "Select Photos",
+    filters: [{ name: "Images", extensions: ["jpg", "jpeg", "png", "webp"] }],
+    properties: ["openFile", "multiSelections"]
+  });
+  if (result.canceled) return [];
+  return result.filePaths.map((fp) => ({
+    path: fp,
+    name: path.basename(fp),
+    data: fs.readFileSync(fp).toString("base64"),
+    mime: fp.match(/\.png$/i) ? "image/png" : fp.match(/\.webp$/i) ? "image/webp" : "image/jpeg"
+  }));
+});
+ipcMain.handle("open-url", async (_, url) => {
+  await shell.openExternal(url);
+});
+autoUpdater.on("update-available", () => {
+  mainWindow == null ? void 0 : mainWindow.webContents.send("update-available");
+  if (manualUpdateCheck) {
+    manualUpdateCheck = false;
+    dialog.showMessageBox(mainWindow, {
+      type: "info",
+      title: "Update Available",
+      message: "A new version is available.",
+      detail: "It is downloading in the background. The app will let you know when it is ready to install."
+    });
+  }
+});
+autoUpdater.on("update-not-available", () => {
+  if (!manualUpdateCheck) return;
+  manualUpdateCheck = false;
+  dialog.showMessageBox(mainWindow, {
+    type: "info",
+    title: "No Updates Available",
+    message: `IECES News Manager ${app.getVersion()} is up to date.`
+  });
+});
+autoUpdater.on("update-downloaded", () => {
+  mainWindow == null ? void 0 : mainWindow.webContents.send("update-downloaded");
+});
+ipcMain.handle("install-update", () => {
+  autoUpdater.quitAndInstall();
+});
