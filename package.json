@@ -1,7 +1,7 @@
 {
-  "name": "ieces-news-manager",
-  "version": "2.0.5",
-  "description": "IECES News & Activities Manager — upload and manage school news for the website",
+  "name": "ieces-media-manager",
+  "version": "2.0.6",
+  "description": "IECES Media Manager — upload and manage school media for the website",
   "main": "src/main.js",
   "scripts": {
     "dev": "vite",
@@ -33,11 +33,11 @@
           ]
         }
       ],
-      "icon": "public/prieces.ico"
+      "icon": "public/iecesmediamanager.ico"
     },
     "mac": {
       "target": "dmg",
-      "icon": "public/prieces.icns"
+      "icon": "public/iecesmediamanager.icns"
     },
     "nsis": {
       "oneClick": true,

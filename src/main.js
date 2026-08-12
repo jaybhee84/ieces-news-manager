@@ -13,9 +13,9 @@ function createWindow() {
     height: 800,
     minWidth: 1000,
     minHeight: 650,
-    title: 'IECES News Manager',
+    title: 'IECES Media Manager',
     // Window & Taskbar icon configuration
-    icon: path.join(__dirname, '../public/prieces.png'),
+    icon: path.join(__dirname, '../public/iecesmediamanager.png'),
     backgroundColor: '#f8fafc',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
