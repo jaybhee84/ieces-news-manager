@@ -5,7 +5,13 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://joilvslvsioayrjshuxg.supabase.co'
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_aozkBamT5C58KY03X9kUgA_iehy73ZU'
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    // Keep the session only in memory so closing or crashing the app requires
+    // the user to sign in again on the next launch.
+    persistSession: false,
+  },
+})
 
 // ── Storage bucket name (create this in Supabase → Storage) ─────────────────
 export const BUCKET = 'news-photos'
