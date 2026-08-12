@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import iecesLogo from "../image/ieceslogo.png";
+import mediaManagerLogo from "../image/iecesmediamanager.png";
 import loginBg1 from "../image/bg1.png";
 import loginBg2 from "../image/bg2.png";
 import loginBg3 from "../image/bg3.png.png";
@@ -28,7 +29,7 @@ export default function LoginPage() {
             <span className="logo-ripple-ring logo-ripple-ring-delay" />
             <div className="relative z-10 w-full h-full rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center overflow-hidden p-1">
               <img
-                src="/iecesmediamanager.png"
+                src={mediaManagerLogo}
                 alt="IECES Media Manager"
                 className="w-full h-full object-contain drop-shadow-lg"
               />

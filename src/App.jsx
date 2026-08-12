@@ -3,6 +3,7 @@ import { supabase } from "./lib/supabase";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import UpdateBanner from "./components/UpdateBanner";
+import mediaManagerLogo from "./image/iecesmediamanager.png";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -55,7 +56,7 @@ export default function App() {
       <div className="login-splash" role="status" aria-label="Opening dashboard">
         <div className="login-splash-glow" />
         <img
-          src="/iecesmediamanager.png"
+          src={mediaManagerLogo}
           alt="IECES Media Manager"
           className="login-splash-logo"
         />
