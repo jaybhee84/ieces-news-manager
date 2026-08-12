@@ -8,6 +8,8 @@ export default function ArticleModal({
   onClose,
   onSaved,
 }) {
+  const [author, setAuthor] = useState(article?.author || "");
+  const [authorSuggestions, setAuthorSuggestions] = useState([]);
   const [title, setTitle] = useState(article?.title || "");
   const [description, setDescription] = useState(article?.description || "");
   const [day, setDay] = useState(article?.day || "1");
@@ -18,6 +20,32 @@ export default function ArticleModal({
   const [saving, setSaving] = useState(false);
   const [isDraggingDoc, setIsDraggingDoc] = useState(false);
   const [parsingDoc, setParsingDoc] = useState(false);
+
+  useEffect(() => {
+    const loadAuthorSuggestions = async () => {
+      const { data, error } = await supabase
+        .from("news_articles")
+        .select("author")
+        .not("author", "is", null);
+
+      if (error) {
+        console.error("Author Suggestions Error:", error);
+        return;
+      }
+
+      const uniqueAuthors = [
+        ...new Set(
+          (data || [])
+            .map((item) => item.author?.trim())
+            .filter(Boolean),
+        ),
+      ].sort((a, b) => a.localeCompare(b));
+
+      setAuthorSuggestions(uniqueAuthors);
+    };
+
+    loadAuthorSuggestions();
+  }, []);
 
   const targetCategory =
     selectedCategory && selectedCategory !== "All"
@@ -160,11 +188,12 @@ export default function ArticleModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim()) return;
+    if (!author.trim() || !title.trim() || !description.trim()) return;
     setSaving(true);
 
     const payload = {
-      title,
+      author: author.trim(),
+      title: title.trim(),
       description,
       category: targetCategory,
       day,
@@ -220,6 +249,28 @@ export default function ArticleModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* AUTHOR */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+              Author's Name *
+            </label>
+            <input
+              type="text"
+              required
+              list="article-author-suggestions"
+              autoComplete="off"
+              placeholder="e.g. Juan Dela Cruz"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-900/20 focus:border-rose-900 transition"
+            />
+            <datalist id="article-author-suggestions">
+              {authorSuggestions.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+          </div>
+
           {/* TITLE */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">

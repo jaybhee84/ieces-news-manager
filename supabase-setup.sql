@@ -6,6 +6,7 @@
 -- 1. Create the news_articles table
 create table if not exists public.news_articles (
   id           uuid primary key default gen_random_uuid(),
+  author       text not null,
   title        text not null,
   category     text not null,
   tag          text not null,
@@ -18,6 +19,11 @@ create table if not exists public.news_articles (
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
+
+-- Add the author field to projects that created this table before it existed.
+-- It remains nullable for old rows; the app requires it for all new articles.
+alter table public.news_articles
+  add column if not exists author text;
 
 -- 2. Enable Row Level Security
 alter table public.news_articles enable row level security;

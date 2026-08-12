@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import iecesLogo from "../image/ieceslogo.png";
+import loginBg1 from "../image/bg1.png";
+import loginBg2 from "../image/bg2.png";
+import loginBg3 from "../image/bg3.png.png";
+import packageInfo from "../../package.json";
 
 export default function LoginPage() {
   const [view, setView] = useState("login"); // 'login' | 'register'
@@ -19,17 +23,18 @@ export default function LoginPage() {
         <div className="absolute bottom-[-40px] right-[-40px] w-80 h-80 rounded-full opacity-10 border-2 border-white" />
 
         <div className="relative z-10 text-center">
-          <div className="w-40 h-40 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center mx-auto mb-6 overflow-hidden p-1">
-            <img
-              src={iecesLogo}
-              alt="IECES Logo"
-              className="w-full h-full object-contain drop-shadow-lg"
-            />
+          <div className="logo-ripple-wrap logo-ripple-wrap-lg mx-auto mb-8">
+            <span className="logo-ripple-ring" />
+            <span className="logo-ripple-ring logo-ripple-ring-delay" />
+            <div className="relative z-10 w-full h-full rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center overflow-hidden p-1">
+              <img
+                src="/iecesmediamanager.png"
+                alt="IECES Media Manager"
+                className="w-full h-full object-contain drop-shadow-lg"
+              />
+            </div>
           </div>
-          <h1 className="text-white text-3xl font-black leading-tight mb-2">
-            IECES Media Manager
-          </h1>
-          <p className="text-rose-200 text-sm leading-relaxed max-w-xs">
+          <p className="text-rose-200 text-sm leading-relaxed max-w-xs mx-auto">
             Isabela East Central Elementary School
             <br />
             <span className="text-rose-300 text-xs">Isabela City Division</span>
@@ -39,21 +44,43 @@ export default function LoginPage() {
             <br />
             Keep the school website up-to-date
           </div>
+          <p className="mt-4 text-[11px] font-semibold tracking-widest text-rose-100/60 uppercase">
+            Version {packageInfo.version}
+          </p>
         </div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-slate-50 p-8 overflow-y-auto">
+      <div className="login-form-panel flex-1 flex flex-col items-center justify-center bg-slate-50 p-8 overflow-y-auto relative">
+        <div className="login-form-slideshow" aria-hidden="true">
+          {[loginBg1, loginBg2, loginBg3].map((image, index) => (
+            <div
+              key={image}
+              className={`login-form-slide login-form-slide-${index + 1}`}
+              style={{ backgroundImage: `url(${image})` }}
+            />
+          ))}
+          <div className="login-form-overlay" />
+        </div>
+
+        <div className="relative z-10 w-full flex flex-col items-center">
         {/* Mobile logo */}
-        <div className="md:hidden text-center mb-6">
-          <img
-            src={iecesLogo}
-            alt="IECES Logo"
-            className="w-20 h-20 object-contain mx-auto mb-2"
-          />
+        <div className="md:hidden text-center mb-7">
+          <div className="logo-ripple-wrap logo-ripple-wrap-sm mx-auto mb-4">
+            <span className="logo-ripple-ring logo-ripple-ring-mobile" />
+            <span className="logo-ripple-ring logo-ripple-ring-delay logo-ripple-ring-mobile" />
+            <img
+              src={iecesLogo}
+              alt="IECES Logo"
+              className="relative z-10 w-full h-full object-contain"
+            />
+          </div>
           <h1 className="text-slate-900 text-xl font-black">
-            IECES News Manager
+            IECES Media Manager
           </h1>
+          <p className="mt-1 text-[10px] font-bold tracking-widest text-slate-400 uppercase">
+            Version {packageInfo.version}
+          </p>
         </div>
 
         {view === "login" ? (
@@ -61,6 +88,7 @@ export default function LoginPage() {
         ) : (
           <RegisterForm onGoLogin={() => setView("login")} />
         )}
+        </div>
       </div>
     </div>
   );
@@ -101,7 +129,7 @@ function LoginForm({ onGoRegister }) {
   };
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="login-content-card w-full max-w-sm">
       <h2 className="text-2xl font-black text-slate-900 mb-1">Sign in</h2>
       <p className="text-slate-500 text-sm mb-8">
         Enter your username and password
@@ -268,7 +296,7 @@ function RegisterForm({ onGoLogin }) {
 
   if (success) {
     return (
-      <div className="w-full max-w-sm text-center">
+      <div className="login-content-card w-full max-w-sm text-center">
         <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-3xl mx-auto mb-4">
           ✅
         </div>
@@ -291,7 +319,7 @@ function RegisterForm({ onGoLogin }) {
   }
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="login-content-card w-full max-w-sm">
       <h2 className="text-2xl font-black text-slate-900 mb-1">
         Create Account
       </h2>

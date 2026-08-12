@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./lib/supabase";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -7,6 +7,8 @@ import UpdateBanner from "./components/UpdateBanner";
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
+  const splashTimer = useRef(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -16,11 +18,25 @@ export default function App() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
+
+      if (event === "SIGNED_IN" && session) {
+        setShowSplash(true);
+        clearTimeout(splashTimer.current);
+        splashTimer.current = setTimeout(() => setShowSplash(false), 2200);
+      }
+
+      if (event === "SIGNED_OUT") {
+        clearTimeout(splashTimer.current);
+        setShowSplash(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(splashTimer.current);
+      subscription.unsubscribe();
+    };
   }, []);
 
   if (loading) {
@@ -30,6 +46,20 @@ export default function App() {
           <div className="w-10 h-10 border-4 border-rose-900 border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-500 text-sm font-medium">Loading…</p>
         </div>
+      </div>
+    );
+  }
+
+  if (session && showSplash) {
+    return (
+      <div className="login-splash" role="status" aria-label="Opening dashboard">
+        <div className="login-splash-glow" />
+        <img
+          src="/iecesmediamanager.png"
+          alt="IECES Media Manager"
+          className="login-splash-logo"
+        />
+        <p className="login-splash-text">IECES Media Manager</p>
       </div>
     );
   }

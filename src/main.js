@@ -183,7 +183,7 @@ autoUpdater.on('update-not-available', () => {
   dialog.showMessageBox(mainWindow, {
     type: 'info',
     title: 'No Updates Available',
-    message: `IECES News Manager ${app.getVersion()} is up to date.`,
+    message: `IECES Media Manager ${app.getVersion()} is up to date.`,
   })
 })
 autoUpdater.on('update-downloaded', () => {
