@@ -5,6 +5,20 @@ import DashboardPage from "./pages/DashboardPage";
 import UpdateBanner from "./components/UpdateBanner";
 import mediaManagerLogo from "./image/iecesmediamanager.png";
 
+async function setPresence(session, status) {
+  if (!session?.user?.id) return;
+  await supabase.from("user_presence").upsert(
+    {
+      user_id: session.user.id,
+      app_id: "media",
+      email: session.user.email || null,
+      status,
+      last_seen: new Date().toISOString(),
+    },
+    { onConflict: "user_id,app_id" },
+  );
+}
+
 export default function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +53,20 @@ export default function App() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!session) return undefined;
+    setPresence(session, "online");
+    const heartbeat = setInterval(() => setPresence(session, "online"), 60000);
+    const updateVisibility = () =>
+      setPresence(session, document.hidden ? "offline" : "online");
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () => {
+      clearInterval(heartbeat);
+      document.removeEventListener("visibilitychange", updateVisibility);
+      setPresence(session, "offline");
+    };
+  }, [session]);
 
   if (loading) {
     return (

@@ -233,12 +233,14 @@ function RegisterForm({ onGoLogin }) {
 
     setLoading(true);
 
-    // 1. Check if email is in the allowed_users whitelist
-    const { data: allowed, error: allowErr } = await supabase
-      .from("allowed_users")
-      .select("email")
-      .eq("email", form.email.trim().toLowerCase())
-      .single();
+    // 1. Check the whitelist managed by IECES Dashboard Manager
+    const { data: allowed, error: allowErr } = await supabase.rpc(
+      "is_app_email_allowed",
+      {
+        app_key: "news",
+        candidate_email: form.email.trim().toLowerCase(),
+      },
+    );
 
     if (allowErr || !allowed) {
       setError(
@@ -281,6 +283,7 @@ function RegisterForm({ onGoLogin }) {
       family_name: form.familyName.trim(),
       first_name: form.firstName.trim(),
       middle_initial: form.middleInitial.trim() || null,
+      app_source: "news",
     });
 
     if (profileErr) {
