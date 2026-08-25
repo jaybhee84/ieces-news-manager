@@ -110,11 +110,19 @@ function LoginForm({ onGoRegister }) {
     const identifier = username.trim().toLowerCase();
     let loginEmail = identifier;
     if (!identifier.includes("@")) {
-      const { data: profile, error: profileErr } = await supabase
+      let { data: profile, error: profileErr } = await supabase
         .from("profiles")
         .select("email")
         .eq("username", identifier)
-        .single();
+        .maybeSingle();
+      if (!profile && identifier === "admin") {
+        const { data: ownerEmail, error: ownerError } = await supabase.rpc(
+          "dashboard_login_email",
+          { candidate_username: identifier },
+        );
+        profile = ownerEmail ? { email: ownerEmail } : null;
+        profileErr = ownerError;
+      }
       if (profileErr || !profile) {
         setError("Username not found.");
         setLoading(false);
@@ -128,7 +136,20 @@ function LoginForm({ onGoRegister }) {
       password,
     });
 
-    if (authErr) setError(authErr.message);
+    if (authErr) {
+      setError(authErr.message);
+      setLoading(false);
+      return;
+    }
+
+    const { error: ownerAccessError } = await supabase.rpc(
+      "ensure_owner_app_access",
+      { app_key: "news" },
+    );
+    if (ownerAccessError) {
+      await supabase.auth.signOut();
+      setError("Could not verify application access. Please try again.");
+    }
     setLoading(false);
   };
 
