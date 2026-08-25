@@ -107,21 +107,24 @@ function LoginForm({ onGoRegister }) {
     setError("");
     setLoading(true);
 
-    // Look up email by username in profiles table
-    const { data: profile, error: profileErr } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("username", username.trim())
-      .single();
-
-    if (profileErr || !profile) {
-      setError("Username not found.");
-      setLoading(false);
-      return;
+    const identifier = username.trim().toLowerCase();
+    let loginEmail = identifier;
+    if (!identifier.includes("@")) {
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("username", identifier)
+        .single();
+      if (profileErr || !profile) {
+        setError("Username not found.");
+        setLoading(false);
+        return;
+      }
+      loginEmail = profile.email;
     }
 
     const { error: authErr } = await supabase.auth.signInWithPassword({
-      email: profile.email,
+      email: loginEmail,
       password,
     });
 
@@ -139,7 +142,7 @@ function LoginForm({ onGoRegister }) {
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
-            Username
+            Username or email
           </label>
           <input
             type="text"
