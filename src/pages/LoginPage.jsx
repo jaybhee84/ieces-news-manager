@@ -287,14 +287,79 @@ function RegisterForm({ onGoLogin }) {
       return;
     }
 
+    const email = form.email.trim().toLowerCase();
+    const profile = {
+      email,
+      username: form.username.trim(),
+      family_name: form.familyName.trim(),
+      first_name: form.firstName.trim(),
+      middle_initial: form.middleInitial.trim() || null,
+      app_source: "news",
+    };
+
     // 3. Sign up with Supabase Auth
     const { data: authData, error: authErr } = await supabase.auth.signUp({
-      email: form.email.trim().toLowerCase(),
+      email,
       password: form.password,
     });
 
     if (authErr) {
-      setError(authErr.message);
+      const accountExists = /already (?:been )?registered|already exists/i.test(
+        authErr.message,
+      );
+
+      if (!accountExists) {
+        setError(authErr.message);
+        setLoading(false);
+        return;
+      }
+
+      // Auth is shared by the IECES apps. The account may already exist even
+      // though its News Manager profile was never created. Verify ownership
+      // with the supplied password, then create only the missing profile.
+      const { data: signInData, error: signInErr } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password: form.password,
+        });
+
+      if (signInErr || !signInData.user) {
+        setError(
+          "This email already has an account. Sign in with its existing password, or contact the administrator to reset it.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      const { data: existingProfile, error: profileLookupErr } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", signInData.user.id)
+        .maybeSingle();
+
+      if (profileLookupErr) {
+        setError("Could not check the existing account. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      if (existingProfile) {
+        setError("This email is already registered. Please sign in instead.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: recoveryProfileErr } = await supabase
+        .from("profiles")
+        .insert({ id: signInData.user.id, ...profile });
+
+      if (recoveryProfileErr) {
+        setError("Could not complete registration: " + recoveryProfileErr.message);
+        setLoading(false);
+        return;
+      }
+
+      setSuccess(true);
       setLoading(false);
       return;
     }
@@ -302,12 +367,7 @@ function RegisterForm({ onGoLogin }) {
     // 4. Insert profile record
     const { error: profileErr } = await supabase.from("profiles").insert({
       id: authData.user.id,
-      email: form.email.trim().toLowerCase(),
-      username: form.username.trim(),
-      family_name: form.familyName.trim(),
-      first_name: form.firstName.trim(),
-      middle_initial: form.middleInitial.trim() || null,
-      app_source: "news",
+      ...profile,
     });
 
     if (profileErr) {
