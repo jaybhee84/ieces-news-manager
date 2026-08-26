@@ -131,7 +131,7 @@ function LoginForm({ onGoRegister }) {
       loginEmail = profile.email;
     }
 
-    const { error: authErr } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
       email: loginEmail,
       password,
     });
@@ -142,13 +142,32 @@ function LoginForm({ onGoRegister }) {
       return;
     }
 
-    const { error: ownerAccessError } = await supabase.rpc(
+    const { data: ownerAccess, error: ownerAccessError } = await supabase.rpc(
       "ensure_owner_app_access",
       { app_key: "news" },
     );
     if (ownerAccessError) {
       await supabase.auth.signOut();
       setError("Could not verify application access. Please try again.");
+      setLoading(false);
+      return;
+    }
+
+    if (!ownerAccess) {
+      const { data: appProfile, error: accessError } = await supabase
+        .from("profiles")
+        .select("app_source")
+        .eq("id", authData.user.id)
+        .maybeSingle();
+
+      if (accessError || appProfile?.app_source !== "news") {
+        await supabase.auth.signOut();
+        setError(
+          "This account is not registered for News Manager. Ask the administrator to allow it, then register.",
+        );
+        setLoading(false);
+        return;
+      }
     }
     setLoading(false);
   };
@@ -297,82 +316,16 @@ function RegisterForm({ onGoLogin }) {
       app_source: "news",
     };
 
-    // 3. Sign up with Supabase Auth
-    const { data: authData, error: authErr } = await supabase.auth.signUp({
-      email,
-      password: form.password,
-    });
+    // 3. The shared Auth user may already exist. A server-side function
+    // reuses that identity and creates only the News Manager profile.
+    const { data: functionData, error: functionError } =
+      await supabase.functions.invoke("news-register", {
+        body: { password: form.password, ...profile },
+      });
 
-    if (authErr) {
-      const accountExists = /already (?:been )?registered|already exists/i.test(
-        authErr.message,
-      );
-
-      if (!accountExists) {
-        setError(authErr.message);
-        setLoading(false);
-        return;
-      }
-
-      // Auth is shared by the IECES apps. The account may already exist even
-      // though its News Manager profile was never created. Verify ownership
-      // with the supplied password, then create only the missing profile.
-      const { data: signInData, error: signInErr } =
-        await supabase.auth.signInWithPassword({
-          email,
-          password: form.password,
-        });
-
-      if (signInErr || !signInData.user) {
-        setError(
-          "This email already has an account. Sign in with its existing password, or contact the administrator to reset it.",
-        );
-        setLoading(false);
-        return;
-      }
-
-      const { data: existingProfile, error: profileLookupErr } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", signInData.user.id)
-        .maybeSingle();
-
-      if (profileLookupErr) {
-        setError("Could not check the existing account. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      if (existingProfile) {
-        setError("This email is already registered. Please sign in instead.");
-        setLoading(false);
-        return;
-      }
-
-      const { error: recoveryProfileErr } = await supabase
-        .from("profiles")
-        .insert({ id: signInData.user.id, ...profile });
-
-      if (recoveryProfileErr) {
-        setError("Could not complete registration: " + recoveryProfileErr.message);
-        setLoading(false);
-        return;
-      }
-
-      setSuccess(true);
-      setLoading(false);
-      return;
-    }
-
-    // 4. Insert profile record
-    const { error: profileErr } = await supabase.from("profiles").insert({
-      id: authData.user.id,
-      ...profile,
-    });
-
-    if (profileErr) {
+    if (functionError || functionData?.error) {
       setError(
-        "Account created but profile save failed: " + profileErr.message,
+        functionData?.error || functionError?.message || "Registration failed.",
       );
       setLoading(false);
       return;
