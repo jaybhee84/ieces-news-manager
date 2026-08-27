@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabase";
+import { MEDIA_APP_KEY, supabase } from "../lib/supabase";
+import { validateMediaSession } from "../lib/mediaAuth";
 import iecesLogo from "../image/ieceslogo.png";
 import mediaManagerLogo from "../image/iecesmediamanager.png";
 import loginBg1 from "../image/bg1.png";
@@ -107,69 +108,68 @@ function LoginForm({ onGoRegister }) {
     setError("");
     setLoading(true);
 
-    const identifier = username.trim().toLowerCase();
-    let loginEmail = identifier;
-    if (!identifier.includes("@")) {
-      let { data: profile, error: profileErr } = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("username", identifier)
+    try {
+      const identifier = username.trim().toLowerCase();
+      const profileResult = await supabase
+        .rpc("resolve_media_login", { candidate_identifier: identifier })
         .maybeSingle();
-      if (!profile && identifier === "admin") {
+
+      let profile = profileResult.data;
+      let profileError = profileResult.error;
+
+      // The protected Dashboard owner intentionally retains the shared owner
+      // Auth identity and may continue signing in as "admin" or by real email.
+      if (!profile) {
         const { data: ownerEmail, error: ownerError } = await supabase.rpc(
           "dashboard_login_email",
-          { candidate_username: identifier },
+          { candidate_username: "admin" },
         );
-        profile = ownerEmail ? { email: ownerEmail } : null;
-        profileErr = ownerError;
+        const ownerMatches =
+          ownerEmail &&
+          (identifier === "admin" || identifier === ownerEmail.toLowerCase());
+        if (ownerMatches) {
+          profile = { auth_email: ownerEmail, real_email: ownerEmail };
+          profileError = ownerError;
+        }
       }
-      if (profileErr || !profile) {
-        setError("Username not found.");
-        setLoading(false);
+
+      if (profileError || !profile) {
+        setError("Media Manager account not found.");
         return;
       }
-      loginEmail = profile.email;
-    }
 
-    const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
-      email: loginEmail,
-      password,
-    });
+      const { data: allowed, error: allowError } = await supabase.rpc(
+        "is_app_email_allowed",
+        {
+          app_key: MEDIA_APP_KEY,
+          candidate_email: profile.real_email,
+        },
+      );
+      if (allowError || !allowed) {
+        setError("Your email is not authorized to access Media Manager.");
+        return;
+      }
 
-    if (authErr) {
-      setError(authErr.message);
-      setLoading(false);
-      return;
-    }
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: profile.auth_email,
+          password,
+        });
+      if (authError) {
+        setError(authError.message);
+        return;
+      }
 
-    const { data: ownerAccess, error: ownerAccessError } = await supabase.rpc(
-      "ensure_owner_app_access",
-      { app_key: "news" },
-    );
-    if (ownerAccessError) {
-      await supabase.auth.signOut();
-      setError("Could not verify application access. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    if (!ownerAccess) {
-      const { data: appProfile, error: accessError } = await supabase
-        .from("profiles")
-        .select("app_source")
-        .eq("id", authData.user.id)
-        .maybeSingle();
-
-      if (accessError || appProfile?.app_source !== "news") {
+      const access = await validateMediaSession(authData.session);
+      if (!access.valid) {
         await supabase.auth.signOut();
-        setError(
-          "This account is not registered for News Manager. Ask the administrator to allow it, then register.",
-        );
-        setLoading(false);
-        return;
+        setError(access.error);
       }
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -280,7 +280,7 @@ function RegisterForm({ onGoLogin }) {
     const { data: allowed, error: allowErr } = await supabase.rpc(
       "is_app_email_allowed",
       {
-        app_key: "news",
+        app_key: MEDIA_APP_KEY,
         candidate_email: form.email.trim().toLowerCase(),
       },
     );
@@ -293,31 +293,17 @@ function RegisterForm({ onGoLogin }) {
       return;
     }
 
-    // 2. Check username not already taken
-    const { data: existingUser } = await supabase
-      .from("profiles")
-      .select("username")
-      .eq("username", form.username.trim())
-      .single();
-
-    if (existingUser) {
-      setError("Username is already taken. Please choose another.");
-      setLoading(false);
-      return;
-    }
-
     const email = form.email.trim().toLowerCase();
     const profile = {
       email,
-      username: form.username.trim(),
+      username: form.username.trim().toLowerCase(),
       family_name: form.familyName.trim(),
       first_name: form.firstName.trim(),
       middle_initial: form.middleInitial.trim() || null,
-      app_source: "news",
     };
 
-    // 3. The shared Auth user may already exist. A server-side function
-    // reuses that identity and creates only the News Manager profile.
+    // The server repeats the allowlist check and creates a deterministic,
+    // Media-only Auth identity plus its app-specific profile.
     const { data: functionData, error: functionError } =
       await supabase.functions.invoke("news-register", {
         body: { password: form.password, ...profile },

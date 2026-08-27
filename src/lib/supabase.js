@@ -7,11 +7,16 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publisha
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
+    storageKey: 'ieces-media-auth',
     // Keep the session only in memory so closing or crashing the app requires
     // the user to sign in again on the next launch.
     persistSession: false,
   },
 })
+
+// Dashboard Manager's authoritative application key for Media Manager is
+// "news". The presence table separately uses "media" as its app_id.
+export const MEDIA_APP_KEY = 'news'
 
 // ── Storage bucket name (create this in Supabase → Storage) ─────────────────
 export const BUCKET = 'news-photos'
